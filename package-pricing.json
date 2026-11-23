@@ -1,0 +1,27 @@
+[
+  {
+    "name": "1 Hour",
+    "duration_hours": 1,
+    "price_kes": 10
+  },
+  {
+    "name": "6 Hours",
+    "duration_hours": 6,
+    "price_kes": 20
+  },
+  {
+    "name": "24 Hours",
+    "duration_hours": 24,
+    "price_kes": 50
+  },
+  {
+    "name": "7 Days",
+    "duration_hours": 168,
+    "price_kes": 250
+  },
+  {
+    "name": "30 Days",
+    "duration_hours": 720,
+    "price_kes": 700
+  }
+]
