@@ -10,6 +10,10 @@ import voucherRoutes from "./routes/vouchers";
 
 const app = express();
 
+// Render runs this service behind a reverse proxy.
+// Trust the single proxy hop so express-rate-limit can identify client IPs.
+app.set("trust proxy", 1);
+
 const configuredOrigins = (process.env.CORS_ORIGIN || "")
   .split(",")
   .map((origin) => origin.trim())
