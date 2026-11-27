@@ -23,7 +23,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 <header><div class="brand">GENZ <span>WIFI</span></div><nav><button class="btn ghost small" onclick="showCustomer()">Customer portal</button></nav></header>
 <main>
 <section id="customer">
-<div class="hero"><div class="eyebrow">Fast. Simple. Connected.</div><h1>Stay connected.<br><span>Pay as you go.</span></h1><p class="muted">Choose a Wi-Fi package, pay with M-Pesa and connect. Affordable internet access from GENZ WIFI.</p><div class="notice">Demo preview: M-Pesa checkout and voucher creation are simulated. No money will be charged.</div></div>
+<div class="hero"><div class="eyebrow">Fast. Simple. Connected.</div><h1>Stay connected.<br><span>Pay as you go.</span></h1><p class="muted">Choose a Wi-Fi package, pay with M-Pesa and connect. Affordable internet access from GENZ WIFI.</p><div class="notice">M-Pesa checkout is connected in Daraja SANDBOX for testing. No real customer payment will be charged. Production payments require Safaricom live credentials and router activation.</div></div>
 <div class="sectionhead"><div><div class="eyebrow">Choose your plan</div><h2>Wi-Fi packages</h2></div><span class="muted">Prices in KES</span></div>
 <div class="grid" id="packages"><p class="muted">Loading packages...</p></div>
 <div class="card" style="margin-top:18px"><h3>Already have a voucher?</h3><p class="muted">Enter your voucher on the Wi-Fi login page provided by the hotspot network.</p><div class="field"><label>Voucher code</label><input id="existingVoucher" placeholder="Enter voucher code"></div><button class="btn ghost" onclick="alert('Connect this form to the live MikroTik HotSpot login endpoint during deployment.')">Continue to connect</button></div>
@@ -31,7 +31,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;p
 </main><footer>© 2026 GENZ WIFI · Kenya · KES</footer>
 <div id="modal" class="modalback hidden"><div class="modal"><button class="close" onclick="closeModal()">×</button><div id="modalBody"></div></div></div>
 <script>
-let plans=[], vouchers=[], sales=0;
+let plans=[];
 
 async function loadPlans(){
   const container=document.getElementById("packages");
@@ -68,17 +68,71 @@ function render(){
   document.getElementById("packages").innerHTML=plans.map((p,i)=>`<article class="card package">${i===2?'<span class="tag">POPULAR</span>':''}<h3>${p.name}</h3><div class="price">${kes(p.price)}</div><p>${p.desc}</p><button class="btn" onclick="checkout(${i})">Buy package</button></article>`).join("");
 }
 function checkout(i){
-  let p=plans[i];
-  document.getElementById("modalBody").innerHTML=`<div class="eyebrow">Secure checkout preview</div><h2>${p.name} · ${kes(p.price)}</h2><p class="muted">Enter your Safaricom number to preview the checkout.</p><div class="field"><label>M-Pesa phone number</label><input id="phone" placeholder="07XXXXXXXX" inputmode="tel"></div><div class="notice">DEMO ONLY — this does not send a real STK Push or charge your M-Pesa account.</div><button class="btn" style="width:100%" onclick="demoPay(${i})">Simulate M-Pesa payment</button>`;
+  const p=plans[i];
+  document.getElementById("modalBody").innerHTML=`<div class="eyebrow">M-Pesa checkout · Sandbox</div><h2>${p.name} · ${kes(p.price)}</h2><p class="muted">Enter the Kenyan Safaricom number that should receive the STK prompt.</p><div class="field"><label>M-Pesa phone number</label><input id="phone" placeholder="07XXXXXXXX" inputmode="tel" autocomplete="tel"></div><div id="paymentError" class="notice hidden"></div><button class="btn" style="width:100%" id="stkButton" onclick="requestStkPush(${i})">Send M-Pesa prompt</button><p class="muted" style="font-size:12px;margin-top:12px">This is a sandbox test. Do not use real customer payments yet.</p>`;
   openModal();
 }
-function demoPay(i){
-  let phone=document.getElementById("phone").value.trim();
-  if(!/^(07|01)\d{8}$/.test(phone)){alert("Enter a valid Kenyan mobile number, e.g. 0712345678");return}
-  let code="GZ"+Math.random().toString(36).slice(2,8).toUpperCase();
-  vouchers.unshift({code,plan:plans[i].name,price:plans[i].price,phone,status:"DEMO PAID"});
-  sales+=plans[i].price;
-  document.getElementById("modalBody").innerHTML=`<div class="eyebrow">Demo payment successful</div><h2>Your voucher</h2><div class="code">${code}</div><p class="muted">Package: ${plans[i].name}<br>Amount: ${kes(plans[i].price)}</p><div class="notice">This is a sample voucher only. It will not authenticate on a live router until the backend and MikroTik integration are implemented.</div><button class="btn" style="width:100%" onclick="closeModal()">Done</button>`;
+
+function validKenyanPhone(phone){
+  const digits=phone.replace(/\D/g,"");
+  return /^(07|01)\d{8}$/.test(digits) || /^254[17]\d{8}$/.test(digits);
+}
+
+async function requestStkPush(i){
+  const phone=document.getElementById("phone").value.trim();
+  const errorBox=document.getElementById("paymentError");
+  const button=document.getElementById("stkButton");
+  if(!validKenyanPhone(phone)){
+    errorBox.textContent="Enter a valid Kenyan mobile number, e.g. 0712345678.";
+    errorBox.classList.remove("hidden");
+    return;
+  }
+  button.disabled=true;
+  button.textContent="Requesting M-Pesa prompt...";
+  errorBox.classList.add("hidden");
+  try{
+    const response=await fetch("https://genz-wifi-api.onrender.com/api/payments/stk-push",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({packageId:plans[i].id,phone})
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok || !data.paymentId) throw new Error(data.error||"Could not request M-Pesa prompt. Please try again.");
+    showPaymentPending(i,data.paymentId,data.message||"STK Push sent. Complete the prompt on your phone.");
+  }catch(error){
+    errorBox.textContent=error.message||"Payment request failed. No voucher was issued.";
+    errorBox.classList.remove("hidden");
+    button.disabled=false;
+    button.textContent="Try again";
+  }
+}
+
+function showPaymentPending(i,paymentId,message){
+  const p=plans[i];
+  document.getElementById("modalBody").innerHTML=`<div class="eyebrow">Payment pending</div><h2>Check your phone</h2><p class="muted">${message}</p><div class="notice">Approve the M-Pesa prompt on your phone. Keep this page open while we check for confirmation.</div><p class="muted">Package: ${p.name}<br>Amount: ${kes(p.price)}</p><div id="paymentStatus" class="muted">Waiting for payment confirmation...</div><button class="btn ghost" style="width:100%;margin-top:14px" onclick="closeModal()">Close</button>`;
+  pollPaymentStatus(i,paymentId,0);
+}
+
+async function pollPaymentStatus(i,paymentId,attempt){
+  const statusBox=document.getElementById("paymentStatus");
+  if(!statusBox || attempt>=40) return;
+  try{
+    const response=await fetch(`https://genz-wifi-api.onrender.com/api/payments/status/${encodeURIComponent(paymentId)}`);
+    const data=await response.json().catch(()=>({}));
+    if(response.ok && data.status==="PAID" && data.voucher){
+      const expiry=data.voucher.expiresAt?new Date(data.voucher.expiresAt).toLocaleString("en-KE",{timeZone:"Africa/Nairobi"}):"—";
+      document.getElementById("modalBody").innerHTML=`<div class="eyebrow">Sandbox payment confirmed</div><h2>Your voucher code</h2><div class="code">${data.voucher.code}</div><p class="muted">Package: ${plans[i].name}<br>Amount: ${kes(plans[i].price)}<br>Expires: ${expiry}</p><div class="notice">Test payment confirmed and voucher saved. Router/HotSpot activation is not connected yet, so this voucher will not provide internet access until that integration is completed. Do not launch live customer payments yet.</div><button class="btn" style="width:100%" onclick="closeModal()">Done</button>`;
+      return;
+    }
+    if(response.ok && data.status==="FAILED"){
+      statusBox.textContent=data.message||"Payment was not completed. You can close this window and try again.";
+      return;
+    }
+    statusBox.textContent="Still waiting for M-Pesa confirmation...";
+  }catch(error){
+    statusBox.textContent="Connection interrupted. Keep this window open; you can check again shortly.";
+  }
+  setTimeout(()=>pollPaymentStatus(i,paymentId,attempt+1),3000);
 }
 
 function openModal(){document.getElementById("modal").classList.remove("hidden")}
