@@ -198,6 +198,40 @@ router.post("/stk-push", async (req, res) => {
   }
 });
 
+// Customer status polling. The payment ID is a random CUID returned only to the
+// checkout page; never include phone numbers or M-Pesa credentials in this response.
+router.get("/status/:paymentId", async (req, res) => {
+  const paymentId = req.params.paymentId;
+  if (!paymentId || paymentId.length > 64) {
+    return res.status(400).json({ error: "Invalid payment ID." });
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: {
+      id: true,
+      status: true,
+      resultDescription: true,
+      voucher: { select: { code: true, expiresAt: true } },
+    },
+  });
+
+  if (!payment) return res.status(404).json({ error: "Payment not found." });
+
+  return res.json({
+    status: payment.status,
+    message:
+      payment.status === "PAID"
+        ? "Payment confirmed."
+        : payment.status === "FAILED"
+          ? payment.resultDescription || "Payment was not completed."
+          : "Waiting for M-Pesa confirmation.",
+    voucher: payment.voucher
+      ? { code: payment.voucher.code, expiresAt: payment.voucher.expiresAt }
+      : null,
+  });
+});
+
 // Safaricom callback endpoint:
 // https://genz-wifi-api.onrender.com/api/payments/mpesa/callback
 router.post("/mpesa/callback", async (req, res) => {
