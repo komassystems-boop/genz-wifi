@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth";
 import packageRoutes from "./routes/packages";
 import paymentRoutes from "./routes/payments";
 import voucherRoutes from "./routes/vouchers";
+import adminRoutes from "./routes/admin";
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/packages", packageRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/vouchers", voucherRoutes);
+app.use("/api/admin", adminRoutes);
 
 const port = Number(process.env.PORT || 4000);
 app.listen(port, () =>
