@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090909">
+<title>GENZ WIFI | Owner Dashboard</title>
+<style>
+:root{--bg:#090909;--panel:#141414;--panel2:#1b1b1b;--gold:#d8ad45;--gold2:#f2d27b;--muted:#a7a7a7;--line:#303030;--green:#53c98b;--red:#ff7373;--blue:#9dc7ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% -10%,#30240d 0,transparent 35%),var(--bg);color:#f7f4ec;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial}header{display:flex;justify-content:space-between;align-items:center;padding:17px clamp(16px,5vw,58px);border-bottom:1px solid var(--line);position:sticky;top:0;background:#090909ed;backdrop-filter:blur(12px);z-index:3}.brand{font-size:20px;font-weight:900;letter-spacing:1.8px}.brand span{color:var(--gold)}.headright{display:flex;gap:9px;align-items:center}.btn{border:1px solid var(--gold);background:var(--gold);color:#111;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer}.btn.ghost{background:transparent;color:var(--gold)}.btn:disabled{opacity:.55;cursor:wait}main{max-width:1150px;margin:auto;padding:28px 18px 65px}.eyebrow{color:var(--gold);font-weight:800;letter-spacing:2px;text-transform:uppercase;font-size:11px}.pagehead{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:22px}.pagehead h1{font-size:clamp(27px,5vw,38px);margin:5px 0}.muted{color:var(--muted)}.loginwrap{max-width:430px;margin:8vh auto}.panel,.stat{background:linear-gradient(150deg,#1b1b1b,#101010);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 12px 35px #0004}.loginwrap h1{margin:8px 0 5px}.field{display:grid;gap:6px;margin:14px 0}.field label{font-size:13px;color:var(--muted)}input{background:#090909;color:#fff;border:1px solid #444;border-radius:9px;padding:12px;width:100%;font:inherit}.notice{border:1px solid #66501e;background:#211a0b;color:#e8d6a5;padding:12px 14px;border-radius:12px;font-size:13px;margin:14px 0}.error{border-color:#733b3b;background:#291414;color:#ffb7b7}.hidden{display:none!important}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}.stat{padding:17px}.statlabel{color:var(--muted);font-size:13px}.statvalue{font-size:clamp(23px,4vw,31px);font-weight:900;color:var(--gold2);margin:5px 0}.statnote{font-size:12px;color:var(--muted)}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}.sectiontitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.sectiontitle h2{font-size:18px;margin:0}.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:650px;font-size:13px}th,td{text-align:left;padding:12px 9px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.6px}.status{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;font-weight:800}.status.PAID{background:#143322;color:#81e6ad}.status.PENDING{background:#332a13;color:#f1d17d}.status.FAILED{background:#3a1717;color:#ff9696}.status.other{background:#222;color:#ddd}.packageitem{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}.packageitem:last-child{border-bottom:0}.packageitem strong{color:var(--gold2)}.empty{padding:22px;text-align:center;color:var(--muted)}footer{text-align:center;color:var(--muted);padding:20px;border-top:1px solid var(--line)}@media(max-width:800px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.twocol{grid-template-columns:1fr}}@media(max-width:520px){header{padding:13px 14px}.brand{font-size:17px}.headright .btn{padding:8px 10px;font-size:12px}main{padding:22px 13px 45px}.stat{padding:14px}.pagehead{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header><div class="brand">GENZ <span>WIFI</span></div><div class="headright"><button id="refreshBtn" class="btn ghost hidden" onclick="loadDashboard()">Refresh</button><button id="logoutBtn" class="btn ghost hidden" onclick="logout()">Log out</button></div></header>
+<main>
+<section id="loginView" class="loginwrap">
+  <div class="panel">
+    <div class="eyebrow">Owner access</div><h1>Admin dashboard</h1><p class="muted">Sign in to view GENZ WIFI packages, payments and vouchers.</p>
+    <form id="loginForm">
+      <div class="field"><label for="email">Owner email</label><input id="email" type="email" autocomplete="username" value="komassystems@gmail.com" required></div>
+      <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required></div>
+      <div id="loginError" class="notice error hidden"></div>
+      <button id="loginBtn" class="btn" style="width:100%" type="submit">Sign in</button>
+    </form>
+    <p class="muted" style="font-size:12px;margin-bottom:0">Owner dashboard only. Your login token is kept in this browser session and cleared when you log out.</p>
+  </div>
+</section>
+<section id="dashboardView" class="hidden">
+  <div class="pagehead"><div><div class="eyebrow">Owner overview</div><h1>Dashboard</h1><div id="updatedAt" class="muted">Loading your business data...</div></div></div>
+  <div id="dashError" class="notice error hidden"></div>
+  <div class="stats">
+    <div class="stat"><div class="statlabel">Packages</div><div id="packageTotal" class="statvalue">—</div><div id="packageActive" class="statnote">Active: —</div></div>
+    <div class="stat"><div class="statlabel">Total payments</div><div id="paymentTotal" class="statvalue">—</div><div id="paymentBreakdown" class="statnote">—</div></div>
+    <div class="stat"><div class="statlabel">Paid revenue</div><div id="revenue" class="statvalue">—</div><div class="statnote">Confirmed PAID payments</div></div>
+    <div class="stat"><div class="statlabel">Vouchers</div><div id="voucherTotal" class="statvalue">—</div><div class="statnote">Saved in database</div></div>
+  </div>
+  <div class="twocol">
+    <div class="panel"><div class="sectiontitle"><h2>Payment summary</h2></div><div id="paymentSummary"></div></div>
+    <div class="panel"><div class="sectiontitle"><h2>Packages</h2></div><div id="packageSummary" class="muted">Package totals load from the owner API.</div></div>
+  </div>
+  <div class="panel" style="margin-top:14px"><div class="sectiontitle"><h2>Recent payments</h2><span class="muted" style="font-size:12px">Latest 20</span></div><div id="recentPayments" class="tablewrap"><div class="empty">Loading payments...</div></div></div>
+  <div class="notice">Payment records are live database data. A voucher record does not mean internet access is active yet; MikroTik HotSpot activation still needs to be connected and tested.</div>
+</section>
+</main><footer>© 2026 GENZ WIFI · Owner dashboard</footer>
+<script>
+const API="https://genz-wifi-api.onrender.com";
+const $=id=>document.getElementById(id);
+let token=sessionStorage.getItem("genzwifi_admin_token")||"";
+const kes=n=>"KSh "+Number(n||0).toLocaleString("en-KE");
+function showLogin(){ $("loginView").classList.remove("hidden");$("dashboardView").classList.add("hidden");$("refreshBtn").classList.add("hidden");$("logoutBtn").classList.add("hidden"); }
+function showDashboard(){ $("loginView").classList.add("hidden");$("dashboardView").classList.remove("hidden");$("refreshBtn").classList.remove("hidden");$("logoutBtn").classList.remove("hidden"); }
+function showError(id,msg){$(id).textContent=msg;$(id).classList.remove("hidden");}
+function hideError(id){$(id).classList.add("hidden");}
+async function login(e){e.preventDefault();hideError("loginError");const btn=$("loginBtn");btn.disabled=true;btn.textContent="Signing in...";
+ try{const response=await fetch(API+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:$ ("email").value.trim(),password:$("password").value})});const data=await response.json().catch(()=>({}));if(!response.ok||!data.token)throw new Error(data.error||"Login failed. Check your email and password.");token=data.token;sessionStorage.setItem("genzwifi_admin_token",token);showDashboard();await loadDashboard();}
+ catch(err){showError("loginError",err.message||"Could not sign in.");}
+ finally{btn.disabled=false;btn.textContent="Sign in";}}
+async function loadDashboard(){if(!token){showLogin();return;}hideError("dashError");$("refreshBtn").disabled=true;$("refreshBtn").textContent="Loading...";
+ try{const response=await fetch(API+"/api/admin/overview",{headers:{Authorization:"Bearer "+token}});const data=await response.json().catch(()=>({}));if(response.status===401){logout();showError("loginError","Your session expired. Please sign in again.");return;}if(!response.ok)throw new Error(data.error||"Could not load dashboard.");renderDashboard(data);}
+ catch(err){showError("dashError",err.message||"Could not load dashboard data.");}
+ finally{$("refreshBtn").disabled=false;$ ("refreshBtn").textContent="Refresh";}}
+function renderDashboard(d){const p=d.packages||{},pay=d.payments||{},v=d.vouchers||{};
+ $("packageTotal").textContent=p.total??0;$("packageActive").textContent="Active: "+(p.active??0);$("paymentTotal").textContent=pay.total??0;$("paymentBreakdown").textContent=`${pay.PAID??0} paid · ${pay.PENDING??0} pending · ${pay.FAILED??0} failed`;$("revenue").textContent=kes(pay.paidAmountKes);$("voucherTotal").textContent=v.total??0;
+ $("paymentSummary").innerHTML=[ ["Paid",pay.PAID??0,"PAID"],["Pending",pay.PENDING??0,"PENDING"],["Failed",pay.FAILED??0,"FAILED"] ].map(x=>`<div class="packageitem"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join("");
+ $("packageSummary").innerHTML=`<div class="packageitem"><span>Total packages</span><strong>${p.total??0}</strong></div><div class="packageitem"><span>Active packages</span><strong>${p.active??0}</strong></div>`;
+ const rows=Array.isArray(d.recentPayments)?d.recentPayments:[];
+ if(!rows.length){$("recentPayments").innerHTML='<div class="empty">No payment records yet.</div>';}
+ else{$("recentPayments").innerHTML=`<table><thead><tr><th>Time</th><th>Package</th><th>Phone</th><th>Amount</th><th>Status</th><th>Receipt</th></tr></thead><tbody>${rows.map(r=>{const dt=r.createdAt?new Date(r.createdAt).toLocaleString("en-KE",{timeZone:"Africa/Nairobi"}):"—";const phone=String(r.phone||"");const masked=phone.length>5?phone.slice(0,4)+"••••"+phone.slice(-2):phone||"—";const st=["PAID","PENDING","FAILED"].includes(r.status)?r.status:"other";return `<tr><td>${escapeHtml(dt)}</td><td>${escapeHtml(r.package?.name||"—")}</td><td>${escapeHtml(masked)}</td><td>${kes(r.amountKes)}</td><td><span class="status ${st}">${escapeHtml(r.status||"Unknown")}</span></td><td>${escapeHtml(r.mpesaReceiptNumber||"—")}</td></tr>`;}).join("")}</tbody></table>`;}
+ $("updatedAt").textContent="Updated "+new Date().toLocaleTimeString("en-KE",{timeZone:"Africa/Nairobi"});}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
+function logout(){token="";sessionStorage.removeItem("genzwifi_admin_token");$("password").value="";showLogin();}
+$("loginForm").addEventListener("submit",login);
+if(token){showDashboard();loadDashboard();}else showLogin();
+</script>
+</body></html>
