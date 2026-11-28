@@ -38,6 +38,7 @@ model Package {
   name           String   @unique
   durationMinutes Int
   priceKes       Int
+  description    String   @default("")
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())
   payments       Payment[]
