@@ -5,7 +5,16 @@ import { requireOwner } from "../security";
 
 const router = Router();
 
-// Public: customers can see active packages.
+// Owner: view all packages, including inactive ones, for dashboard management.
+router.get("/manage", requireOwner, async (_req, res) => {
+  const packages = await prisma.package.findMany({
+    orderBy: { durationMinutes: "asc" },
+  });
+
+  res.json(packages);
+});
+
+// Public: customers can see active packages only.
 router.get("/", async (_req, res) => {
   const packages = await prisma.package.findMany({
     where: { active: true },
